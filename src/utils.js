@@ -290,11 +290,28 @@ export function downloadBlob(filename, blob) {
 
 // ── Tauri 桌面端保存文件（Rust save_file command，默认保存到系统「下载」目录）──
 // 浏览器环境回退为 <a download>。所有下载/导出统一走这里。
-export async function saveBlob(filename, blob) {
+// opts: { dir?: string（自定义下载目录，空=系统下载目录）, log?: function（写入软件日志） }
+
+// 读取用户设置的下载目录（未设置返回 ""，即系统「下载」目录）
+export function getDownloadDir() {
+  try {
+    const saved = localStorage.getItem("APP_SETTINGS");
+    if (saved) {
+      const s = JSON.parse(saved);
+      return (s && typeof s.downloadDir === "string" && s.downloadDir.trim()) || "";
+    }
+  } catch (e) { console.warn("[utils] 读取下载目录失败:", e); }
+  return "";
+}
+
+export async function saveBlob(filename, blob, opts = {}) {
+  const dir = (opts && opts.dir) || getDownloadDir();
+  const logger = (opts && opts.log) || null;
   // Android：无系统「下载」对话框，本地 blob 转 ObjectURL 触发 WebView 下载
   const isAndroidApp = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent) && typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   if (isAndroidApp) {
     downloadBlob(filename, blob);
+    if (logger) logger(`✅ 已开始下载：${filename}`);
     return { ok: true, path: "" };
   }
   // Tauri 2 环境检测：标准内部标志 __TAURI_INTERNALS__（比 window.__TAURI__ 更可靠，不依赖 withGlobalTauri）
@@ -309,33 +326,40 @@ export async function saveBlob(filename, blob) {
         binary += String.fromCharCode(...bytes.subarray(i, i + CHUNK));
       }
       const data = btoa(binary);
-      const path = await invoke("save_file", { dir: "", filename, data });
-      if (typeof window !== "undefined" && window.alert) window.alert(`✅ 已保存到：${path}`);
+      const path = await invoke("save_file", { dir, filename, data });
+      if (logger) logger(`✅ 已保存到：${path}`);
+      else if (typeof window !== "undefined" && window.alert) window.alert(`✅ 已保存到：${path}`);
       return { ok: true, path };
     } catch (e) {
       console.warn("Tauri save_file 失败，回退浏览器下载:", e);
       downloadBlob(filename, blob);
-      if (typeof window !== "undefined" && window.alert) window.alert("已开始下载：" + filename);
+      if (logger) logger(`⚠️ 保存失败，已改为浏览器下载：${filename}`);
+      else if (typeof window !== "undefined" && window.alert) window.alert("已开始下载：" + filename);
       return { ok: false, err: String((e && e.message) || e) };
     }
   }
   downloadBlob(filename, blob);
-  if (typeof window !== "undefined" && window.alert) window.alert("已开始下载：" + filename);
+  if (logger) logger(`✅ 已开始下载：${filename}`);
+  else if (typeof window !== "undefined" && window.alert) window.alert("已开始下载：" + filename);
   return { ok: true };
 }
 
-// 下载远程资源（成片导出）
-export async function downloadUrl(url, filename) {
+// 下载远程资源（成片导出）。opts: { dir?: string, log?: function }
+export async function downloadUrl(url, filename, opts = {}) {
+  const dir = (opts && opts.dir) || getDownloadDir();
+  const logger = (opts && opts.log) || null;
   // Android：直接交给系统浏览器打开（COS 永久 URL），用户可预览/保存/分享
   const isAndroidApp = typeof navigator !== "undefined" && /Android/i.test(navigator.userAgent) && typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
   if (isAndroidApp) {
     try {
       const { openUrl } = await import("@tauri-apps/plugin-shell");
       await openUrl(url);
+      if (logger) logger(`✅ 已开始下载：${filename}`);
       return true;
     } catch (e) {
       console.warn("Android openUrl 失败，回退 window.open:", e);
       window.open(url, "_blank");
+      if (logger) logger(`✅ 已开始下载：${filename}`);
       return true;
     }
   }
@@ -343,15 +367,18 @@ export async function downloadUrl(url, filename) {
   if (isTauri) {
     try {
       const { invoke } = await import("@tauri-apps/api/core");
-      const path = await invoke("download_url", { url, filename });
+      const path = await invoke("download_url", { url, filename, dir });
       console.log("已下载到:", path);
-      if (typeof window !== "undefined" && window.alert) window.alert(`✅ 已保存到：${path}`);
+      if (logger) logger(`✅ 已下载到：${path}`);
+      else if (typeof window !== "undefined" && window.alert) window.alert(`✅ 已保存到：${path}`);
       return true;
     } catch (e) {
       // Rust 下载失败（URL 不可达 / 实例未开等），明确报错而不是静默打开空白页
       const msg = (e && (e.message || e)) || "下载失败";
       console.warn("Tauri download_url 失败:", msg);
-      if (typeof window !== "undefined" && window.alert) {
+      if (logger) {
+        logger(`❌ 下载失败：${msg}`);
+      } else if (typeof window !== "undefined" && window.alert) {
         window.alert(`下载失败：${msg}\n请确认视频/图片地址可访问（实例或服务是否已关闭）`);
       }
       return false;
@@ -360,15 +387,17 @@ export async function downloadUrl(url, filename) {
   try {
     const r = await fetch(url);
     if (!r.ok) {
-      if (window.alert) window.alert(`下载失败：HTTP ${r.status}，请确认资源地址可访问`);
+      if (logger) logger(`❌ 下载失败：HTTP ${r.status}，请确认资源地址可访问`);
+      else if (window.alert) window.alert(`下载失败：HTTP ${r.status}，请确认资源地址可访问`);
       return false;
     }
     const b = await r.blob();
-    const res = await saveBlob(filename, b);
+    const res = await saveBlob(filename, b, { dir, log: logger });
     return !!res.ok;
   } catch (e) {
     // 跨域或被拦截时，退化为直接打开
     window.open(url, "_blank");
+    if (logger) logger(`⚠️ 下载失败（已尝试打开链接）：${filename}`);
     return false;
   }
 }

@@ -456,7 +456,7 @@ ${text.slice(0, 12000)}`;
       scenes: scenes.map((s) => ({ id: s.id, name: s.name, type: "scene", enabled: (s.model3d?.status === "exported"), url: s.model3d?.url || "", modelB64: s.model3d?.b64 || "" })),
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    void saveBlob("jinsu-shared-assets.json", blob);
+    void saveBlob("jinsu-shared-assets.json", blob, { log });
     // 同时写入共享目录，供 3D 导演台启动后自动载入（无需手动导出/导入）
     invoke("save_shared_assets", { contents: JSON.stringify(data) }).catch(() => {});
   };
@@ -637,7 +637,7 @@ ${text.slice(0, 12000)}`;
                   </select>
                 </div>
                 <div style={btnRow}>
-                  {a.url && <button style={miniBtn} onClick={() => downloadUrl(a.url, (a.title || "asset") + (a.type === "video" ? ".mp4" : a.type === "image" ? ".png" : ""))}>⬇ 下载</button>}
+                  {a.url && <button style={miniBtn} onClick={() => downloadUrl(a.url, (a.title || "asset") + (a.type === "video" ? ".mp4" : a.type === "image" ? ".png" : ""), { log })}>⬇ 下载</button>}
                   <button style={miniBtn} disabled={!onUseDub} onClick={() => onUseDub && onUseDub(a)}>🎙 配音</button>
                   <button style={miniBtn} disabled={!onUseEdit || a.type !== "video"} onClick={() => onUseEdit && onUseEdit(a)}>🎬 剪辑</button>
                   <button style={miniBtnD} onClick={() => { setTrash([...trash, { ...a, _trashAt: Date.now() }]); setAssets(assets.filter((x) => x.id !== a.id)); }}>🗑</button>
@@ -806,7 +806,7 @@ ${text.slice(0, 12000)}`;
         </>
       )}
 
-      {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} />}
+      {lightbox && <ImageLightbox src={lightbox.src} alt={lightbox.alt} onClose={() => setLightbox(null)} log={log} />}
     </div>
   );
 }

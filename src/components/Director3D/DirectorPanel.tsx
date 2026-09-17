@@ -992,7 +992,7 @@ ${episodeContent.substring(0, 3000)}`;
           onClick={() => {
             const data = exportScene();
             const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-            void saveBlob('director-scene.json', blob);
+            void saveBlob('director-scene.json', blob, { log });
           }}
           style={{ width: '100%', padding: '6px', background: '#2a2a4a', border: 'none', borderRadius: '4px', color: '#fff', cursor: 'pointer', fontSize: '12px', marginTop: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}
         >

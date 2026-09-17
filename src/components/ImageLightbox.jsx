@@ -1,8 +1,8 @@
 import React, { useEffect } from "react";
 import { downloadUrl, saveBlob } from "../utils.js";
 // 悬浮查看原图：点击缩略图后全屏浮层展示原图（解决「生成图看不清」）。
-// 用法：父组件持有 lightboxSrc 状态，<ImageLightbox src={...} alt={...} onClose={...} />
-export function ImageLightbox({ src, alt, onClose }) {
+// 用法：父组件持有 lightboxSrc 状态，<ImageLightbox src={...} alt={...} onClose={...} log={...} />
+export function ImageLightbox({ src, alt, onClose, log }) {
   useEffect(() => {
     const onKey = (e) => { if (e.key === "Escape") onClose && onClose(); };
     document.addEventListener("keydown", onKey);
@@ -18,13 +18,14 @@ export function ImageLightbox({ src, alt, onClose }) {
       try {
         const response = await fetch(src);
         const blob = await response.blob();
-        await saveBlob(filename, blob);
+        await saveBlob(filename, blob, { log });
       } catch (e) {
-        alert("下载失败：" + e.message);
+        if (log) log(`❌ 下载失败：${String((e && e.message) || e)}`);
+        else alert("下载失败：" + e.message);
       }
     } else {
       // 远程URL用downloadUrl（fetch+Blob）
-      const success = await downloadUrl(src, filename);
+      const success = await downloadUrl(src, filename, { log });
       if (!success) {
         if (confirm("直接下载失败，是否在浏览器中打开？")) {
           window.open(src, "_blank");

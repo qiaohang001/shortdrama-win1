@@ -2654,17 +2654,21 @@ ${shotTexts}`;
                       style={{ padding: "6px 12px", border: "1px solid var(--border)", borderRadius: 6, background: "transparent", color: "var(--text)", cursor: "pointer", fontSize: 12 }}
                       onClick={async () => {
                         const filename = `${sh.title || 'video'}.mp4`;
-                        if (sh.videoUrl.startsWith('blob:') || sh.videoUrl.startsWith('data:')) {
-                          const r = await fetch(sh.videoUrl);
-                          const b = await r.blob();
-                          await saveBlob(filename, b);
-                        } else {
-                          const success = await downloadUrl(sh.videoUrl, filename);
-                          if (!success) {
-                            if (confirm('直接下载失败，是否在浏览器中打开？')) {
-                              window.open(sh.videoUrl, '_blank');
+                        try {
+                          if (sh.videoUrl.startsWith('blob:') || sh.videoUrl.startsWith('data:')) {
+                            const r = await fetch(sh.videoUrl);
+                            const b = await r.blob();
+                            await saveBlob(filename, b, { log });
+                          } else {
+                            const success = await downloadUrl(sh.videoUrl, filename, { log });
+                            if (!success) {
+                              if (confirm('直接下载失败，是否在浏览器中打开？')) {
+                                window.open(sh.videoUrl, '_blank');
+                              }
                             }
                           }
+                        } catch (e) {
+                          if (log) log(`❌ 下载失败：${String((e && e.message) || e)}`);
                         }
                       }}
                     >

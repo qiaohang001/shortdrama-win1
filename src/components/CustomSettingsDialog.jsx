@@ -13,6 +13,7 @@ const DEFAULT_SETTINGS = {
   autoAddToAssets: true,
   notificationSound: true,
   language: "zh-CN",
+  downloadDir: "",
 };
 
 export function CustomSettingsDialog({ open, onClose, theme, onThemeChange, appName }) {
@@ -209,6 +210,12 @@ export function CustomSettingsDialog({ open, onClose, theme, onThemeChange, appN
                 checked={settings.notificationSound}
                 onChange={(v) => updateSetting("notificationSound", v)}
               />
+              <SettingDirPicker
+                label="下载保存目录"
+                desc="视频 / 图片 / 配音等下载文件的保存位置（不设置则保存到系统「下载」目录）"
+                value={settings.downloadDir || ""}
+                onChange={(v) => updateSetting("downloadDir", v)}
+              />
               <SettingSelect
                 label="语言"
                 desc="界面显示语言"
@@ -359,6 +366,109 @@ function SettingSelect({ label, desc, value, options, onChange }) {
           <option key={opt.value} value={opt.value}>{opt.label}</option>
         ))}
       </select>
+    </div>
+  );
+}
+
+// 设置项：下载目录选择（Tauri 目录选择器 + 手动输入 + 恢复默认）
+function SettingDirPicker({ label, desc, value, onChange }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(value || "");
+  const pickDir = async () => {
+    try {
+      const mod = await import("@tauri-apps/plugin-dialog");
+      const dir = await mod.open({ directory: true, multiple: false, title: "选择下载保存目录" });
+      if (typeof dir === "string" && dir) {
+        onChange(dir);
+        setDraft(dir);
+        setEditing(false);
+      }
+    } catch (e) {
+      console.warn("[Settings] 打开目录选择器失败:", e);
+      alert("目录选择器不可用，请直接手动输入目录路径。\n\n(" + String((e && e.message) || e) + ")");
+      setEditing(true);
+    }
+  };
+  const submitDraft = () => {
+    onChange((draft || "").trim());
+    setEditing(false);
+  };
+  return (
+    <div style={{
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      padding: "12px 16px",
+      background: "var(--panel-2, #15152a)",
+      borderRadius: 8,
+      flexWrap: "wrap",
+      gap: 8,
+    }}>
+      <div style={{ flex: 1, minWidth: 200 }}>
+        <div style={{ fontSize: 13, color: "var(--text, #fff)", fontWeight: 500 }}>{label}</div>
+        {desc && <div style={{ fontSize: 11, color: "var(--text-muted, #888)", marginTop: 2 }}>{desc}</div>}
+        {value && !editing && (
+          <div style={{ fontSize: 11, color: "var(--accent-2, #5CE1E6)", marginTop: 4, wordBreak: "break-all" }}>
+            📁 {value}
+          </div>
+        )}
+        {!value && !editing && (
+          <div style={{ fontSize: 11, color: "var(--text-muted, #666)", marginTop: 4 }}>未设置（保存到系统「下载」目录）</div>
+        )}
+        {editing && (
+          <div style={{ display: "flex", gap: 6, marginTop: 6 }}>
+            <input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="例如 D:\\Downloads"
+              style={{
+                flex: 1,
+                padding: "6px 10px",
+                border: "1px solid var(--border, rgba(255,255,255,0.1))",
+                borderRadius: 6,
+                background: "var(--input-bg, #0f141e)",
+                color: "var(--text, #fff)",
+                fontSize: 12,
+              }}
+            />
+            <button onClick={submitDraft} style={{ padding: "6px 12px", border: "none", borderRadius: 6, background: "var(--accent, #7c3aed)", color: "#fff", cursor: "pointer", fontSize: 12 }}>确定</button>
+            <button onClick={() => setEditing(false)} style={{ padding: "6px 12px", border: "1px solid var(--border, rgba(255,255,255,0.1))", borderRadius: 6, background: "transparent", color: "var(--text-muted, #888)", cursor: "pointer", fontSize: 12 }}>取消</button>
+          </div>
+        )}
+      </div>
+      <div style={{ display: "flex", gap: 6 }}>
+        <button
+          onClick={pickDir}
+          style={{
+            padding: "6px 14px",
+            border: "1px solid var(--border, rgba(255,255,255,0.15))",
+            borderRadius: 6,
+            background: "var(--input-bg, #0f141e)",
+            color: "var(--text, #fff)",
+            cursor: "pointer",
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}
+        >
+          📂 选择目录
+        </button>
+        <button
+          onClick={() => { onChange(""); setDraft(""); setEditing(false); }}
+          style={{
+            padding: "6px 10px",
+            border: "1px solid var(--border, rgba(255,255,255,0.1))",
+            borderRadius: 6,
+            background: "transparent",
+            color: "var(--text-muted, #888)",
+            cursor: "pointer",
+            fontSize: 12,
+            whiteSpace: "nowrap",
+          }}
+          title="恢复为系统「下载」目录"
+        >
+          恢复默认
+        </button>
+      </div>
     </div>
   );
 }

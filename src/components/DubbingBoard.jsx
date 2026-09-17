@@ -1354,7 +1354,7 @@ export function DubbingBoard({ project, update, log, incomingChunk = "", incomin
     const blob = new Blob([JSON.stringify(data, null, 2)], {
       type: 'application/json',
     });
-    await saveBlob(`${project?.title || 'dubbing'}_配音数据.json`, blob);
+    await saveBlob(`${project?.title || 'dubbing'}_配音数据.json`, blob, { log });
     log(`✅ 已导出配音数据（${data.dialogues.length}条）`);
   };
 
@@ -2331,14 +2331,12 @@ export function DubbingBoard({ project, update, log, incomingChunk = "", incomin
                     onClick={async () => {
                       try {
                         const r = await fetch(dlg.audioUrl);
+                        if (!r.ok) throw new Error(`HTTP ${r.status}`);
                         const b = await r.blob();
-                        await saveBlob(`${dlg.character}_${index + 1}.mp3`, b);
-                        setTimeout(() => {
-                          URL.revokeObjectURL(url);
-                          a.remove();
-                        }, 1000);
+                        await saveBlob(`${dlg.character}_${index + 1}.mp3`, b, { log });
                       } catch (e) {
-                        alert('下载失败，请重试或检查网络');
+                        if (log) log(`❌ 配音下载失败：${String((e && e.message) || e)}`);
+                        else alert('下载失败，请重试或检查网络');
                       }
                     }}
                     style={{

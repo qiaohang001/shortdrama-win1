@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { IS_ANDROID } from "../../lib/platform.js";
+import { getDownloadDir } from "../../utils.js";
 
 // ========== 常量配置 ==========
 const PIXELS_PER_SECOND = 50;
@@ -1148,6 +1149,7 @@ export function EditExport({ project, update, log, incomingAssets = [], onConsum
         bitrate: exportBitrate || "8M",
         bg_color: bgColor || "#000000",
         filename: `烬序成片_${Date.now()}.mp4`,
+        dir: getDownloadDir(),
       });
       log?.(`✅ 导出成功：${path}`);
     } catch (e) {

@@ -14,6 +14,8 @@ export const DEFAULT_APP_SETTINGS = {
   autoAddToAssets: true,
   notificationSound: true,
   language: "zh-CN",
+  // 自定义下载/导出目录（空 = 系统「下载」目录）
+  downloadDir: "",
 };
 
 // 获取所有设置
