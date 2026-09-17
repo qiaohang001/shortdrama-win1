@@ -17,3 +17,7 @@ vite.config.js.timestamp-*.mjs
 *.log
 .DS_Store
 Thumbs.db
+
+# 本地 clone 的 shortdrama-win1 独立仓库（勿提交）
+/shortdrama-win1/
+
