@@ -136,6 +136,7 @@ const VIDEO_STYLES = [
   { key: "fantasy", label: "奇幻风格", desc: "Fantasy style, magical atmosphere, ethereal lighting, dreamlike" },
   { key: "horror", label: "恐怖风格", desc: "Horror style, dark atmosphere, eerie lighting, suspenseful" },
   { key: "comedy", label: "喜剧风格", desc: "Comedy style, bright colors, cheerful atmosphere, exaggerated expressions" },
+  { key: "guofeng3d", label: "国风3D动画", desc: "Chinese-style 3D animation, ink-wash aesthetics, paper-cut art elements, vibrant red-black palette, stylized cinematic 3D render" },
 ];
 
 // ─── 全局画质前置词库（按视频风格注入，替代旧固定后缀；硬性约束全风格生效）───
@@ -148,6 +149,7 @@ const QUALITY_PREFIXES = {
   fantasy: "奇幻电影级画质，魔法氛围光影，粒子光效细腻，梦幻色彩层次，史诗级场景渲染，超高细节纹理。",
   horror: "恐怖电影质感，压抑暗调，受限光源，高对比阴影，阴冷色调，氛围压迫，电影级噪点颗粒，细节真实。",
   comedy: "明亮喜剧电影质感，高调柔和布光，色彩明快饱满，画面干净通透，电影级细节与景深。",
+  guofeng3d: "国风3D动画电影质感，工笔水墨意境与三维动画光影结合，红黑双色国潮配色，剪纸/皮影元素点缀，画面干净通透；角色造型风格化，场景如中式动画电影级渲染，线条清晰，层次分明。",
 };
 const QUALITY_HARD_RULES = "全局硬性约束：全程无超帧、无画面畸变扭曲、无多余空镜、无穿帮道具、人物口型与台词1:1精准同步；无AI失真脸部，皮肤保留原生毛孔肌理，拒绝过度磨皮、重度美白；人物四肢手部动作自然无畸形，五官脸型全程统一，服装发型配饰前后镜头无改动；画面流畅无抖动、无闪烁卡顿、无崩坏肢体，阴影过渡柔和，无塑料假人质感。";
 const DEFAULT_QUALITY_PREFIX = "8K超高清电影级画质，超高细节纹理，4K渲染输出，专业影视级画面，自然光影与真实质感。";
@@ -1466,9 +1468,12 @@ ${shotTexts}`;
         const seed = Math.floor(Math.random() * 2147483647);
         workflowParams.seed = seed;
         log(`随机种子：${seed}`);
-        if (subjectNames.length > 0) {
-          workflowParams.subject_names = subjectNames;
-          log(`角色参考绑定：${subjectNames.join("、")}`);
+        // 角色参考绑定（与 i2v/s2v 分支一致：从已选角色提取名字，H3 锁人物用）
+        const ia2vSelChars = characters.filter(c => (sh.selectedCharIds || []).includes(c.id) && (c.fourView || c.image));
+        const ia2vSubjectNames = ia2vSelChars.map(c => c.name || "").filter(Boolean);
+        if (ia2vSubjectNames.length > 0) {
+          workflowParams.subject_names = ia2vSubjectNames;
+          log(`角色参考绑定：${ia2vSubjectNames.join("、")}`);
         }
 
         // 5. duration 已经在 workflowParams 中设置了（1-10秒）
@@ -2097,6 +2102,27 @@ ${shotTexts}`;
                         >
                           {refiningSceneId === scene.id ? "⏳ 优化中..." : `✨ 优化提示词（${getPrice("llm_scene_refine", 1.0)}积分）`}
                         </button>
+                        <button
+                          style={{ padding: "5px 10px", border: "1px solid #f59e0b", borderRadius: 5, background: "rgba(245,158,11,0.12)", color: "#f59e0b", cursor: "pointer", fontSize: 11 }}
+                          onClick={() => document.getElementById("sceneUpload_" + scene.id).click()}
+                          title="上传本地图片作为场景参考图"
+                        >📤 上传</button>
+                        <input type="file" accept="image/*" style={{ display: "none" }} id={"sceneUpload_" + scene.id}
+                          onChange={async (e) => {
+                            const file = e.target.files[0];
+                            if (!file) return;
+                            log(`正在上传场景「${scene.name}」图片…`);
+                            try {
+                              const objectUrl = URL.createObjectURL(file);
+                              const publicUrl = await uploadImageToServer(objectUrl, log);
+                              if (publicUrl) {
+                                updateScenes(scenes.map(s => s.id === scene.id ? { ...s, image: publicUrl } : s));
+                                log(`✅ 场景「${scene.name}」图片上传成功，已作为场景参考图`);
+                              } else { log(`❌ 场景「${scene.name}」图片上传失败`); }
+                              URL.revokeObjectURL(objectUrl);
+                            } catch (err) { log(`❌ 场景「${scene.name}」图片上传失败: ${err.message}`); }
+                            e.target.value = "";
+                          }} />
                         <button
                           style={{ padding: "5px 10px", border: "1px solid var(--border)", borderRadius: 5, background: "transparent", color: "var(--text)", cursor: "pointer", fontSize: 11 }}
                           onClick={() => setEditingScene({ id: scene.id, name: scene.name, desc: scene.desc || "", prompt: scene.prompt || "" })}
