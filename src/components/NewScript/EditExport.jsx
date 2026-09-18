@@ -1147,7 +1147,7 @@ export function EditExport({ project, update, log, incomingAssets = [], onConsum
         height: ratio?.h || 1080,
         fps: exportFps || 30,
         bitrate: exportBitrate || "8M",
-        bg_color: bgColor || "#000000",
+        bgColor: bgColor || "#000000",
         filename: `烬序成片_${Date.now()}.mp4`,
         dir: getDownloadDir(),
       });
