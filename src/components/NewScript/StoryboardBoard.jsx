@@ -3,25 +3,25 @@ import { generateImage, api } from "../../dispatch-jobs.js";
 import { isLoggedIn, precheckCredits, deductCredits, getCreditBalance } from "../../utils/backend-api.js";
 import { getPrice } from "../../utils/pricing-utils.js";
 
-// 鐢熷浘椋庢牸閫夐」
+// 生图风格选项
 const STYLE_OPTIONS = [
-  { value: "cinematic", label: "鐢靛奖绾у啓瀹?, desc: "鐢靛奖绾у啓瀹為鏍硷紝鑳剁墖璐ㄦ劅锛屼笓涓氬厜褰憋紝楂樺姣斿害" },
-  { value: "anime", label: "鍔ㄦ极椋庢牸", desc: "鍔ㄦ极椋庢牸锛岃壊褰╅矞鑹筹紝琛ㄦ儏鐢熷姩锛屾棩寮忓姩鐢荤編瀛? },
-  { value: "realistic", label: "瓒呭啓瀹?, desc: "瓒呭啓瀹炵収鐗囬鏍硷紝鐪熷疄鐨偆璐ㄦ劅锛岃嚜鐒跺厜褰憋紝鏋佽嚧缁嗚妭" },
-  { value: "noir", label: "榛戣壊鐢靛奖", desc: "榛戣壊鐢靛奖椋庢牸锛岄粦鐧介珮鍙嶅樊锛屾繁閭冮槾褰憋紝绁炵姘涘洿" },
-  { value: "cyberpunk", label: "璧涘崥鏈嬪厠", desc: "璧涘崥鏈嬪厠椋庢牸锛岄湏铏圭伅鍏夛紝鏈潵閮藉競锛岄珮绉戞妧浣庣敓娲? },
-  { value: "fantasy", label: "濂囧够椋庢牸", desc: "濂囧够椋庢牸锛岄瓟娉曟皼鍥达紝绌虹伒鍏夌嚎锛屾ⅵ骞绘剰澧? },
-  { value: "horror", label: "鎭愭€栭鏍?, desc: "鎭愭€栭鏍硷紝榛戞殫姘涘洿锛岄槾妫厜绾匡紝鎮枒鎯婃倸" },
-  { value: "comedy", label: "鍠滃墽椋庢牸", desc: "鍠滃墽椋庢牸锛屾槑浜壊褰╋紝娆㈠揩姘涘洿锛屽じ寮犺〃鎯? },
+  { value: "cinematic", label: "电影级写实", desc: "电影级写实风格，胶片质感，专业光影，高对比度" },
+  { value: "anime", label: "动漫风格", desc: "动漫风格，色彩鲜艳，表情生动，日式动画美学" },
+  { value: "realistic", label: "超写实", desc: "超写实照片风格，真实皮肤质感，自然光影，极致细节" },
+  { value: "noir", label: "黑色电影", desc: "黑色电影风格，黑白高反差，深邃阴暗，神秘氛围" },
+  { value: "cyberpunk", label: "赛博朋克", desc: "赛博朋克风格，霓虹灯光，未来都市，高科技低生活" },
+  { value: "fantasy", label: "奇幻风格", desc: "奇幻风格，魔法氛围，精灵光线，梦境意境" },
+  { value: "horror", label: "恐怖风格", desc: "恐怖风格，黑暗氛围，阴暗光线，惊悚刺激" },
+  { value: "comedy", label: "喜剧风格", desc: "喜剧风格，明亮色彩，欢快氛围，夸张表情" },
 ];
 
-// 鐢婚潰姣斾緥閫夐」
+// 画面比例选项
 const ASPECT_RATIO_OPTIONS = [
-  { value: "9:16", label: "9:16 绔栧睆", desc: "绔栧睆鐭墽鏋勫浘", size: "1024x1820" },
-  { value: "16:9", label: "16:9 妯睆", desc: "妯睆鐢靛奖鏋勫浘", size: "1820x1024" },
-  { value: "1:1", label: "1:1 鏂瑰舰", desc: "鏂瑰舰鏋勫浘", size: "1024x1024" },
-  { value: "4:3", label: "4:3 鏍囧噯", desc: "鏍囧噯姣斾緥鏋勫浘", size: "1152x864" },
-  { value: "3:4", label: "3:4 绔栫増", desc: "绔栫増鏋勫浘", size: "864x1152" },
+  { value: "9:16", label: "9:16 竖屏", desc: "竖屏短剧构图", size: "1024x1820" },
+  { value: "16:9", label: "16:9 横屏", desc: "横屏电影构图", size: "1820x1024" },
+  { value: "1:1", label: "1:1 方形", desc: "方形构图", size: "1024x1024" },
+  { value: "4:3", label: "4:3 标准", desc: "标准比例构图", size: "1152x864" },
+  { value: "3:4", label: "3:4 竖版", desc: "竖版构图", size: "864x1152" },
 ];
 
 export function StoryboardBoard({ project, update, log }) {
