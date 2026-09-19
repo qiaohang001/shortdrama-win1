@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+﻿import React, { useState, useEffect, useRef } from "react";
 import { downloadUrl, saveBlob } from "../../utils.js";
 import { runDispatchJob, api, generateImage, img2imgImage, extractTail, concatVideos } from "../../dispatch-jobs.js";
 import { isLoggedIn, precheckCredits, getCreditBalance } from "../../utils/backend-api.js";
@@ -1089,10 +1089,7 @@ ${shotTexts}`;
     const sameEp = shots.filter(s => s && s.episodeId === sh.episodeId);
     const sameIdx = sameEp.findIndex(s => s && s.id === sh.id);
     if (sameIdx >= 0 && sameIdx < sameEp.length - 1) {
-      const next = sameEp[sameIdx + 1];
-      if (next && next.imageUrl && next.imageUrl.startsWith("http")) {
-        return next;
-      }
+      return sameEp[sameIdx + 1];
     }
     return null;
   };
