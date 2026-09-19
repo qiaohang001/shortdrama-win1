@@ -79,7 +79,9 @@ export function StoryboardBoard({ project, update, log }) {
       console.log("[鍒嗛暅鐢熷浘] prompt闀垮害:", prompt.length, "size:", imageSize, "姣斾緥:", selectedAspectRatio);
       const res = await generateImage({ prompt, size: imageSize, n: 1, kind: "storyboard" });
       // 1. 鏇存柊鍒嗛暅鐨刬mageUrl锛堢户缁鐩栨棫鍥剧墖锛屼繚鎸佹渶鏂帮級
-      update({ scenes: scenes.map(s => s.id === sc.id ? { ...s, imageUrl: res.image_url } : s) });
+      const newScenes = scenes.map(s => s.id === sc.id ? { ...s, imageUrl: res.image_url } : s);
+      const newShots = shots.map(s => s.id === sc.id ? { ...s, imageUrl: res.image_url } : s);
+      update({ scenes: newScenes, shots: newShots });
       // 2. 鍚屾椂瀛樺叆绱犳潗搴擄紙鎵€鏈夌敓鎴愮殑鍥剧墖閮戒繚瀛橈紝涓嶈鐩栵級
       try {
         const currentAssets = project?.assets || [];
@@ -498,4 +500,5 @@ export function StoryboardBoard({ project, update, log }) {
     </div>
   );
 }
+
 
