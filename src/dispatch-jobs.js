@@ -218,11 +218,11 @@ export async function runDispatchJob({ type, payload, onProgress = () => {}, pol
  * @param {number} [params.n]     - 生成张数，默认 1
  * @returns {Promise<{image_url: string, credits_used: number}>}
  */
-export async function generateImage({ prompt, model = "Qwen/Qwen-Image", size = "", n = 1 }) {
+export async function generateImage({ prompt, model = "Qwen/Qwen-Image", size = "", n = 1, kind = "" }) {
   if (!token()) {
     throw new DispatchError("未登录调度机，请先在「设置」中登录。", { status: 401 });
   }
-  const payload = { prompt, model, size, n };
+  const payload = { prompt, model, size, n, kind };
   return await api("/api/image/generate", { method: "POST", body: JSON.stringify(payload) });
 }
 
